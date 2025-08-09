@@ -36,6 +36,8 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
     cy = (H - 1) / 2;
   const sectors = 16;
 
+  const mod = (n, m) => ((n % m) + m) % m;
+
   return {
     // 0 none
     0: (x, y) =>
@@ -128,7 +130,7 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
     9: (x, y) => {
       const bx = (x / blockSize) | 0,
         by = (y / blockSize) | 0;
-      return ((bx ^ by) + (seed & 3)) % paletteLen;
+      return mod(bx ^ (by + (seed & 3)), paletteLen);
     },
 
     // 10 checker hashed
@@ -138,7 +140,7 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
       const parity = (bx + by) & 1;
       const h = hash2D(seed, bx, by) >>> 0;
       const v = parity ? h >>> 1 : h >>> 3; // unsigned shifts
-      return (v >>> 0) % paletteLen;
+      return mod(v, paletteLen);
     },
   };
 }
