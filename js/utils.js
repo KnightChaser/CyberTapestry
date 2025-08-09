@@ -9,11 +9,11 @@ export const TAU = Math.PI * 2;
  * @returns {string} Normalized hex string.
  */
 export function normalizeHex(s) {
-  if (!s) return "";
-  return (s + "")
-    .replace(/^0x/i, "")
-    .replace(/[^0-9a-fA-F]/g, "")
-    .toLowerCase();
+    if (!s) return "";
+    return (s + "")
+        .replace(/^0x/i, "")
+        .replace(/[^0-9a-fA-F]/g, "")
+        .toLowerCase();
 }
 
 /**
@@ -24,15 +24,15 @@ export function normalizeHex(s) {
  * @returns {number} 32-bit unsigned integer seed.
  */
 export function hexToSeed32(hex) {
-  if (hex.length === 0) return 0x811c9dc5 >>> 0;
-  if (hex.length % 2 === 1) hex = "0" + hex;
-  let h = 0x811c9dc5 >>> 0;
-  for (let i = 0; i < hex.length; i += 2) {
-    const b = parseInt(hex.slice(i, i + 2), 16);
-    h ^= b;
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
+    if (hex.length === 0) return 0x811c9dc5 >>> 0;
+    if (hex.length % 2 === 1) hex = "0" + hex;
+    let h = 0x811c9dc5 >>> 0;
+    for (let i = 0; i < hex.length; i += 2) {
+        const b = parseInt(hex.slice(i, i + 2), 16);
+        h ^= b;
+        h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
 }
 
 /**
@@ -43,12 +43,12 @@ export function hexToSeed32(hex) {
  * @returns {number} Mixed 32-bit unsigned integer.
  */
 export function fmix32(a) {
-  a ^= a >>> 16;
-  a = Math.imul(a, 0x85ebca6b);
-  a ^= a >>> 13;
-  a = Math.imul(a, 0xc2b2ae35);
-  a ^= a >>> 16;
-  return a >>> 0;
+    a ^= a >>> 16;
+    a = Math.imul(a, 0x85ebca6b);
+    a ^= a >>> 13;
+    a = Math.imul(a, 0xc2b2ae35);
+    a ^= a >>> 16;
+    return a >>> 0;
 }
 
 /**
@@ -61,9 +61,9 @@ export function fmix32(a) {
  * @returns {number} 32-bit unsigned integer hash value.
  */
 export function hash2D(seed, x, y) {
-  let n = (seed + Math.imul((x | 0) + 0x9e3779b9, 0x85ebca6b)) >>> 0;
-  n ^= Math.imul((y | 0) + 0x9e3779b9, 0xc2b2ae35);
-  return fmix32(n);
+    let n = (seed + Math.imul((x | 0) + 0x9e3779b9, 0x85ebca6b)) >>> 0;
+    n ^= Math.imul((y | 0) + 0x9e3779b9, 0xc2b2ae35);
+    return fmix32(n);
 }
 
 /**
@@ -74,17 +74,17 @@ export function hash2D(seed, x, y) {
  * @returns {string} Random hexadecimal string of the specified length.
  */
 export function randomHex(len = 32) {
-  if (window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(Math.ceil(len / 2));
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
-      .join("")
-      .slice(0, len);
-  }
-  let s = "";
-  while (s.length < len)
-    s += Math.floor(Math.random() * 256)
-      .toString(16)
-      .padStart(2, "0");
-  return s.slice(0, len);
+    if (window.crypto?.getRandomValues) {
+        const bytes = new Uint8Array(Math.ceil(len / 2));
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .slice(0, len);
+    }
+    let s = "";
+    while (s.length < len)
+        s += Math.floor(Math.random() * 256)
+            .toString(16)
+            .padStart(2, "0");
+    return s.slice(0, len);
 }

@@ -1,52 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Entropy drawing</title>
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="title">
-        <span class="glow-dot"></span><span>Entropy drawing</span>
-      </div>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Entropy drawing</title>
+        <link rel="stylesheet" href="css/styles.css" />
+    </head>
+    <body>
+        <div class="wrap">
+            <div class="title">
+                <span class="glow-dot"></span><span>Entropy drawing</span>
+            </div>
 
-      <div class="panel">
-        <div class="row">
-          <input
-            id="seedInput"
-            type="text"
-            spellcheck="false"
-            placeholder="enter hex (e.g. deadbeefcafefeed) — arbitrary length"
-          />
-          <button id="randomBtn" class="primary">Random</button>
-          <button id="renderBtn">Render</button>
-          <button id="copyBtn">Copy link</button>
-        </div>
-        <div class="hint" style="margin-top: 6px">
-          URL carries <code>?seed=...</code>. Share the link; they'll see the
-          same art.
-        </div>
-      </div>
+            <div class="panel">
+                <div class="row">
+                    <input
+                        id="seedInput"
+                        type="text"
+                        spellcheck="false"
+                        placeholder="enter hex (e.g. deadbeefcafefeed) — arbitrary length"
+                    />
+                    <button id="randomBtn" class="primary">Random</button>
+                    <button id="renderBtn">Render</button>
+                    <button id="copyBtn">Copy link</button>
+                </div>
+                <div class="hint" style="margin-top: 6px">
+                    URL carries <code>?seed=...</code>. Share the link; they'll
+                    see the same art.
+                </div>
+            </div>
 
-      <div class="canvas-wrap">
-        <canvas id="art" width="128" height="128"></canvas>
-        <div class="meta">
-          <div>Palette:</div>
-          <div class="palette" id="palette"></div>
-          <div class="badges">
-            <span class="badge" id="modeBadge">mode: —</span>
-            <span class="badge" id="blockBadge">block: —</span>
-          </div>
-          <div>Seed (normalized): <span id="normSeed">—</span></div>
-          <div class="hint">
-            Fixed colors: <code>#FFFBDE #91C8E4 #749BC2 #4682A9</code>
-          </div>
+            <div class="canvas-wrap">
+                <canvas id="art" width="128" height="128"></canvas>
+                <div class="meta">
+                    <div>Palette:</div>
+                    <div class="palette" id="palette"></div>
+                    <div class="badges">
+                        <span class="badge" id="modeBadge">mode: —</span>
+                        <span class="badge" id="blockBadge">block: —</span>
+                    </div>
+                    <div>Seed (normalized): <span id="normSeed">—</span></div>
+                    <div class="hint">
+                        Fixed colors:
+                        <code>#FFFBDE #91C8E4 #749BC2 #4682A9</code>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <script type="module" src="js/app.js"></script>
-  </body>
+        <script type="module" src="js/app.js"></script>
+    </body>
 </html>

@@ -7,15 +7,15 @@ export const BLOCK_OPTIONS = [1, 2, 4, 8, 16];
 
 // Mode names (deterministic by seed; no manual pick)
 export const MODE_NAMES = [
-  "none",
-  "vertical",
-  "horizontal",
-  "quad",
-  "diag",
-  "anti-diag",
-  "rot4",
-  "rings",
-  "sectors",
-  "stripes",
-  "checker",
+    "none",
+    "vertical",
+    "horizontal",
+    "quad",
+    "diag",
+    "anti-diag",
+    "rot4",
+    "rings",
+    "sectors",
+    "stripes",
+    "checker",
 ];
