@@ -147,6 +147,55 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(91, 211, 255, 0.12);
 }
 
+/* Match the scale <select> to button styling */
+select#exportScale {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    padding: 10px 36px 10px 14px; /* room for chevron */
+    border: 1px solid #1b2a44;
+    background: linear-gradient(
+        180deg,
+        #0e1d3a 0%,
+        #0c162c 100%
+    ); /* like .primary */
+    color: var(--fg);
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(91, 211, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    line-height: 1;
+    white-space: nowrap;
+    font-family: Consolas, monospace; /* your global choice */
+    font-size: 14px;
+}
+
+/* Chevron icon */
+select#exportScale {
+    background-image: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23bfe5ff' d='M4 6l4 4 4-4z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px 14px;
+}
+
+select#exportScale:hover {
+    background-image: url(\"data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23d5f1ff' d='M4 6l4 4 4-4z'/></svg>\");
+    background-color: #0f2041; /* subtle lift */
+    box-shadow: 0 0 18px rgba(124, 247, 212, 0.18);
+}
+
+select#exportScale:focus {
+    outline: none;
+    border-color: #224a72;
+    box-shadow: 0 0 0 3px rgba(91, 211, 255, 0.12);
+}
+
+/* Options popup — limited across browsers, but helps */
+select#exportScale option {
+    background: #0c182f;
+    color: var(--fg);
+}
+
 button,
 select {
     flex: 0 0 auto;
