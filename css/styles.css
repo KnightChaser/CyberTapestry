@@ -83,8 +83,15 @@ body {
     flex-wrap: wrap;
 }
 
+@media (min-width: 800px) {
+    .row {
+        flex-wrap: nowrap;
+    }
+}
+
 input[type="text"] {
-    flex: 1 1 420px;
+    flex: 1 1 auto;
+    min-width: 200px;
     padding: 12px 14px;
     font-size: 14px;
     letter-spacing: 0.3px;
@@ -124,6 +131,26 @@ button:hover {
 
 button:active {
     transform: translateY(1px) scale(0.995);
+}
+
+select {
+    padding: 10px 12px;
+    border: 1px solid #1b2a44;
+    background: #0c182f;
+    color: var(--fg);
+    border-radius: 10px;
+}
+
+select:focus {
+    outline: none;
+    border-color: #224a72;
+    box-shadow: 0 0 0 3px rgba(91, 211, 255, 0.12);
+}
+
+button,
+select {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .primary {

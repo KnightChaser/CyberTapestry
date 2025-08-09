@@ -18,7 +18,11 @@ const els = {
     modeBadge: document.getElementById("modeBadge"),
     blockBadge: document.getElementById("blockBadge"),
     normSeed: document.getElementById("normSeed"),
+    download: document.getElementById("downloadBtn"),
+    exportScale: document.getElementById("exportScale"),
 };
+
+let lastState = { seedHex: "", modeName: "", blockSize: 0 };
 
 // Palette swatches (fixed)
 PALETTE_BASE.forEach((c) => {
@@ -48,6 +52,11 @@ function renderFromHex(hexIn, { updateUrl = true } = {}) {
     const modeIdx = fmix32(seed + 0x1234) % MODE_NAMES.length;
     els.blockBadge.textContent = `block: ${blockSize} px`;
     els.modeBadge.textContent = `mode: ${MODE_NAMES[modeIdx]}`;
+
+    // Save last state for potential future use
+    lastState.seedHex = hex;
+    lastState.modeName = MODE_NAMES[modeIdx];
+    lastState.blockSize = blockSize;
 
     // Deterministic palette rotation
     const rotation = fmix32(seed + 0x5a5a) % 4;
@@ -108,6 +117,40 @@ els.copy.addEventListener("click", async () => {
 els.seed.addEventListener("keydown", (e) => {
     if (e.key === "Enter") renderFromHex(els.seed.value);
 });
+els.download.addEventListener("click", () => {
+    downloadPNG(els.exportScale.value);
+});
+
+function downloadPNG(scale = 4) {
+    const s = Number(scale) || 4;
+    const src = els.canvas;
+    const w = src.width * s,
+        h = src.height * s;
+
+    // draw to an offscreen canvas without smoothing
+    const off = document.createElement("canvas");
+    off.width = w;
+    off.height = h;
+    const octx = off.getContext("2d");
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(src, 0, 0, w, h);
+
+    // build filename
+    const seedPart = lastState.seedHex || "seed";
+    const modePart = lastState.modeName || "mode";
+    const file = `entropy-${seedPart}-${modePart}-${w}x${h}.png`;
+
+    // trigger download
+    off.toBlob((blob) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = file;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(a.href);
+        a.remove();
+    }, "image/png");
+}
 
 // Boot from URL or default
 const params = new URLSearchParams(window.location.search);
