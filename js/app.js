@@ -34,6 +34,11 @@ PALETTE_BASE.forEach((c) => {
     els.palette.appendChild(d);
 });
 
+/**
+ * Renders the canvas from a hex seed value.
+ * @param {*} hexIn - The hex seed input.
+ * @param {*} param1 - Additional parameters.
+ */
 function renderFromHex(hexIn, { updateUrl = true } = {}) {
     const hex = normalizeHex(hexIn);
     els.normSeed.textContent = hex || "(empty → default offset basis)";
@@ -127,6 +132,10 @@ els.download.addEventListener("click", () => {
     downloadPNG(els.exportScale.value);
 });
 
+/**
+ * Downloads the current canvas as a PNG file.
+ * @param {*} scale - The scale factor for the exported image.
+ */
 function downloadPNG(scale = 4) {
     const s = Number(scale) || 4;
     const src = els.canvas;
