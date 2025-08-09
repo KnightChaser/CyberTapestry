@@ -179,7 +179,7 @@ select#exportScale {
 }
 
 select#exportScale:hover {
-    background-image: url(\"data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23d5f1ff' d='M4 6l4 4 4-4z'/></svg>\");
+    background-image: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%23d5f1ff' d='M4 6l4 4 4-4z'/></svg>");
     background-color: #0f2041; /* subtle lift */
     box-shadow: 0 0 18px rgba(124, 247, 212, 0.18);
 }
@@ -264,4 +264,41 @@ canvas {
 .hint {
     font-size: 11px;
     opacity: 0.85;
+}
+
+/* a bit more vertical scroll room */
+.wrap {
+    margin-bottom: 120px;
+}
+
+/* canvas frame with subtle glow and a small gutter for ticks */
+.frame {
+    position: relative;
+    padding: 16px; /* gutter where ticks live */
+    border-radius: 16px;
+    background: #08101d;
+    border: 1px solid #14223a;
+    box-shadow: 0 0 24px rgba(91, 211, 255, 0.08),
+        inset 0 0 40px rgba(124, 247, 212, 0.04);
+    width: fit-content;
+}
+
+/* keep the art crisp, cal overlays on top, no pointer events */
+.frame canvas#art {
+    position: relative;
+    z-index: 2; /* above */
+    display: block;
+    width: 512px;
+    height: 512px; /* your visible scale; stays pixelated */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border-radius: 12px;
+}
+
+.frame canvas#cal {
+    position: absolute;
+    z-index: 1; /* below art */
+    inset: 0;
+    pointer-events: none;
+    border-radius: 16px; /* match .frame radius */
 }
