@@ -21,6 +21,35 @@ function rot4Canonical(x, y, W, H) {
 }
 
 /**
+ * Convert a 32-bit unsigned integer to a float in the range [0, 1).
+ * @param {*} u - The input integer.
+ * @returns {number} The normalized float value.
+ */
+function h01(u) {
+    return (u >>> 0) / 0x100000000;
+}
+
+/**
+ * Linearly interpolate between two values.
+ * @param {*} a - The start value.
+ * @param {*} b - The end value.
+ * @param {*} t - The interpolation factor (0 to 1).
+ * @returns The interpolated value.
+ */
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+/**
+ * Smoothstep interpolation.
+ * @param {*} t - The interpolation factor (0 to 1).
+ * @returns The smoothed value.:w
+ */
+function smoothstep(t) {
+    return t * t * (3 - 2 * t);
+}
+
+/**
  * Build a collection of color indexer functions for different pattern modes.
  * Each indexer function takes (x, y) coordinates and returns a palette color index.
  *
@@ -37,6 +66,20 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
     const sectors = 16;
 
     const mod = (n, m) => ((n % m) + m) % m;
+
+    // Voronoi params (cell size scales with block)
+    const cell = Math.max(4, blockSize * 4);
+
+    // weave params
+    const weaveP = Math.max(3, blockSize * 2);
+    const weaveT = Math.max(1, Math.floor(weaveP / 5));
+
+    // crosshatch params
+    const hatchP = Math.max(4, blockSize * 3);
+    const hatchT = Math.max(1, Math.floor(hatchP / 6));
+
+    // rotated checker params
+    const rcStep = Math.max(2, blockSize * 2);
 
     return {
         // 0 none
@@ -147,6 +190,159 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
             const h = hash2D(seed, bx, by) >>> 0;
             const v = parity ? h >>> 1 : h >>> 3; // unsigned shifts
             return mod(v, paletteLen);
+        },
+
+        // 11 diamonds (Manhattan/L1 bands)
+        11: (x, y) => {
+            const d = Math.abs(x - cx) + Math.abs(y - cy);
+            const band = Math.floor(d / blockSize);
+            return mod(fmix32(seed + band * 0x45d9f3b), paletteLen);
+        },
+
+        // 12 squares (Chebyshev rings)
+        12: (x, y) => {
+            const d = Math.max(Math.abs(x - cx), Math.abs(y - cy));
+            const band = Math.floor(d / blockSize);
+            return mod(fmix32(seed + band * 0x27d4eb2d), paletteLen);
+        },
+
+        // 13 spiral (angle + k*radius bands)
+        13: (x, y) => {
+            const dx = x - cx,
+                dy = y - cy;
+            const r = Math.hypot(dx, dy) / Math.max(1, blockSize);
+            let a = Math.atan2(dy, dx);
+            if (a < 0) a += TAU;
+            const k = 1 + (seed & 7) / 8; // mild seed-driven twist
+            const band = Math.floor((a + k * r) * 1.5);
+            return mod(fmix32(seed ^ (band * 0x9e3779b9)), paletteLen);
+        },
+
+        // 14 spokes (wheel)
+        14: (x, y) => {
+            const dx = x - cx,
+                dy = y - cy;
+            let a = Math.atan2(dy, dx);
+            if (a < 0) a += TAU;
+            const spokes = 8 + (seed & 7); // 8..15
+            const sec = Math.floor((a / TAU) * spokes);
+            return mod(fmix32(seed + sec * 0x632be5ab), paletteLen);
+        },
+
+        // 15 bricks (staggered)
+        15: (x, y) => {
+            const bw = blockSize * 2,
+                bh = blockSize;
+            const row = Math.floor(y / bh);
+            const x2 = x + (row & 1 ? bw >> 1 : 0);
+            const bx = Math.floor(x2 / bw),
+                by = row;
+            return mod(hash2D(seed, bx, by), paletteLen);
+        },
+
+        // 16 voronoi (grid seeds; nearest)
+        16: (x, y) => {
+            const gx = Math.floor(x / cell),
+                gy = Math.floor(y / cell);
+            let bestD = 1e9,
+                bestI = 0;
+            for (let oy = -1; oy <= 1; oy++) {
+                for (let ox = -1; ox <= 1; ox++) {
+                    const cxg = gx + ox,
+                        cyg = gy + oy;
+                    const h = hash2D(seed, cxg, cyg);
+                    const jx = (h & 0xffff) / 0xffff; // 0..1
+                    const jy = ((h >>> 16) & 0xffff) / 0xffff; // 0..1
+                    const px = (cxg + jx) * cell;
+                    const py = (cyg + jy) * cell;
+                    const dx = x - px,
+                        dy = y - py;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 < bestD) {
+                        bestD = d2;
+                        bestI = h >>> 24;
+                    }
+                }
+            }
+            return bestI % paletteLen;
+        },
+
+        // 17 value-noise (bilinear; quantize)
+        17: (x, y) => {
+            const gx = Math.floor(x / cell),
+                gy = Math.floor(y / cell);
+            const tx = (x % cell) / cell,
+                ty = (y % cell) / cell;
+
+            const h00 = h01(hash2D(seed, gx + 0, gy + 0));
+            const h10 = h01(hash2D(seed, gx + 1, gy + 0));
+            const h01v = h01(hash2D(seed, gx + 0, gy + 1));
+            const h11 = h01(hash2D(seed, gx + 1, gy + 1));
+
+            const sx = smoothstep(tx),
+                sy = smoothstep(ty);
+            const ix0 = lerp(h00, h10, sx);
+            const ix1 = lerp(h01v, h11, sx);
+            const v = lerp(ix0, ix1, sy); // 0..1
+
+            const bins = paletteLen;
+            const idx = Math.min(bins - 1, Math.floor(v * bins));
+            return idx;
+        },
+
+        // 18 weave (over/under grid)
+        18: (x, y) => {
+            const ax = Math.abs((x % weaveP) - weaveP / 2);
+            const ay = Math.abs((y % weaveP) - weaveP / 2);
+            const isStrandX = ax < weaveT,
+                isStrandY = ay < weaveT;
+            if (!(isStrandX || isStrandY)) {
+                return mod(
+                    hash2D(seed, (x / weaveP) | 0, (y / weaveP) | 0),
+                    paletteLen
+                );
+            }
+            // over/under by tile parity
+            const tile = (((x / weaveP) | 0) ^ ((y / weaveP) | 0)) & 1;
+            return tile ? 0 : 2; // pick two palette anchors for contrast
+        },
+
+        // 19 crosshatch (plus lattice)
+        19: (x, y) => {
+            const ax = Math.abs((x % hatchP) - hatchP / 2);
+            const ay = Math.abs((y % hatchP) - hatchP / 2);
+            const on = ax < hatchT || ay < hatchT;
+            if (!on)
+                return mod(
+                    hash2D(seed, (x / hatchP) | 0, (y / hatchP) | 0),
+                    paletteLen
+                );
+            return ((x / hatchP) | 0) & 1 ? 1 : 3;
+        },
+
+        // 20 rot45-checker
+        20: (x, y) => {
+            const a = Math.floor((x + y) / rcStep);
+            const b = Math.floor((x - y) / rcStep);
+            const v = (a ^ b) & 3;
+            return v % paletteLen;
+        },
+
+        // 21 kaleido8 (8-way)
+        21: (x, y) => {
+            // map to one octant via mirrors over x=0,y=0 and y=x
+            const ux = x - cx,
+                uy = y - cy;
+            let ax = Math.abs(ux),
+                ay = Math.abs(uy);
+            if (ay > ax) {
+                const t = ax;
+                ax = ay;
+                ay = t;
+            } // reflect across diag
+            const sx = Math.floor((ax + cx) / blockSize);
+            const sy = Math.floor((ay + cy) / blockSize);
+            return mod(hash2D(seed, sx, sy), paletteLen);
         },
     };
 }
