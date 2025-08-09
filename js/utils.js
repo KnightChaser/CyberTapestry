@@ -1,6 +1,54 @@
 export const TAU = Math.PI * 2;
 
 /**
+ * Streaming 4-lane compressor: turns arbitrarily long hex -> fixed N*8 chars
+ *
+ * @param {*} hex - The hex string to compress.
+ *                  If longer than MAX_HEX_NORM, compresses to outWords words.
+ * @param {*} outWords - The number of output words to generate.
+ * @returns {number[]} Array of compressed 32-bit words.
+ */
+function compressHexToWords(hex, outWords = 8) {
+    // 4 lanes with different salts; we’ll expand to outWords by cycling lanes
+    const lanes = [
+        0x811c9dc5 ^ 0x01, // FNV offset basis tweaked
+        0x811c9dc5 ^ 0x02,
+        0x811c9dc5 ^ 0x03,
+        0x811c9dc5 ^ 0x04,
+    ].map((x) => x >>> 0);
+
+    // walk bytes from hex
+    let h = lanes.slice();
+    const FNV_PRIME = 0x01000193;
+    const L = hex.length;
+    for (let i = 0, lane = 0; i < L; i += 2, lane = (lane + 1) & 3) {
+        // make sure we have full byte; if odd length, left-pad last nibble
+        const b = parseInt(i + 1 < L ? hex.slice(i, i + 2) : "0" + hex[i], 16);
+        // FNV-1a step on a lane, then cross-lane stir
+        h[lane] ^= b;
+        h[lane] = Math.imul(h[lane], FNV_PRIME) >>> 0;
+        const nxt = (lane + 1) & 3;
+        h[nxt] ^= (h[lane] >>> 17) ^ Math.imul(h[lane], 0x9e3779b1);
+        h[nxt] >>>= 0;
+    }
+
+    // finalize each lane
+    for (let i = 0; i < 4; i++) h[i] = fmix32(h[i]);
+
+    // expand/cycle lanes to desired word count
+    const out = [];
+    for (let i = 0; i < outWords; i++) {
+        // derive each extra word from lane state + index, then fmix again
+        const v = fmix32(h[i & 3] + Math.imul(i + 1, 0x9e3779b9));
+        out.push(v >>> 0);
+    }
+    return out;
+}
+
+const MAX_HEX_NORM = 128; // if cleaned input > this, we compress
+const COMPRESS_TO_WORDS = 8; // 8 words = 64 hex chars
+
+/**
  * Normalize a hex color string.
  * Removes leading "0x", non-hex characters, and converts to lowercase.
  * Returns an empty string if the input is falsy.
@@ -10,10 +58,20 @@ export const TAU = Math.PI * 2;
  */
 export function normalizeHex(s) {
     if (!s) return "";
-    return (s + "")
+    let hex = (s + "")
         .replace(/^0x/i, "")
         .replace(/[^0-9a-fA-F]/g, "")
         .toLowerCase();
+
+    if (!hex) {
+        return "";
+    }
+
+    if (hex.length > MAX_HEX_NORM) {
+        const words = compressHexToWords(hex, COMPRESS_TO_WORDS);
+        hex = words.map((w) => w.toString(16).padStart(8, "0")).join("");
+    }
+    return hex;
 }
 
 /**
