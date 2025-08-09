@@ -344,5 +344,148 @@ export function buildColorIndexer(seed, blockSize, paletteLen, W, H) {
             const sy = Math.floor((ay + cy) / blockSize);
             return mod(hash2D(seed, sx, sy), paletteLen);
         },
+
+        // 22 concentric-squares (Chebyshev bands with thick borders)
+        22: (x, y) => {
+            const d = Math.max(Math.abs(x - cx), Math.abs(y - cy));
+            const bandW = Math.max(2, blockSize); // thickness of each square ring
+            const k = Math.floor(d / bandW);
+            // emphasize borders: near ring edges -> alternate color
+            const edge = d % bandW;
+            const edgeBias = edge < 1 || edge > bandW - 2 ? 1 : 0;
+            return mod(k + edgeBias + (seed & 1), paletteLen);
+        },
+
+        // 23 bullseye-bold (thick circular rings)
+        23: (x, y) => {
+            const r = Math.hypot(x - cx, y - cy);
+            const bandW = Math.max(2, (blockSize * 1.5) | 0);
+            const k = Math.floor(r / bandW);
+            const e = r % bandW;
+            const edge = e < 1 || e > bandW - 2 ? 1 : 0;
+            return mod(k + (edge << 1), paletteLen);
+        },
+
+        // 24 dots-grid (disc lattice; background hashed per cell)
+        24: (x, y) => {
+            const step = Math.max(4, blockSize * 3);
+            const bx = Math.floor(x / step),
+                by = Math.floor(y / step);
+            const cxp = bx * step + step / 2,
+                cyp = by * step + step / 2;
+            const rr = step * 0.28; // dot radius
+            const inside = (x - cxp) ** 2 + (y - cyp) ** 2 <= rr * rr;
+            if (inside) return seed & 2; // stable dot color (0 or 2)
+            return mod(hash2D(seed, bx, by), paletteLen);
+        },
+
+        // 25 waves (sinus stripes)
+        25: (x, y) => {
+            const amp = Math.max(2, blockSize * 0.8);
+            const wl = Math.max(6, blockSize * 4);
+            const freq = (Math.PI * 2) / wl;
+            const phase = (seed & 1023) * 0.003;
+            const yy = y + amp * Math.sin(x * freq + phase);
+            const band = Math.floor(yy / Math.max(2, blockSize));
+            return mod(band, paletteLen);
+        },
+
+        // 26 square-maze (grid walls + corridors)
+        26: (x, y) => {
+            const cell = Math.max(6, blockSize * 3);
+            const wall = Math.max(1, (cell / 6) | 0);
+            const gx = x % cell,
+                gy = y % cell;
+            const onWall = gx < wall || gy < wall;
+            if (onWall) return (1 + (seed & 1)) % paletteLen; // wall color
+            // corridor shading by checker in cell index
+            const tx = (x / cell) | 0,
+                ty = (y / cell) | 0;
+            return (tx ^ ty) & 1 ? 0 : 3;
+        },
+
+        // 27 iso-cubes (isometric 3-shade tiling)
+        27: (x, y) => {
+            const s = Math.max(6, blockSize * 3);
+            // rotate 45° into diamond grid
+            const u = Math.floor((x + y) / s);
+            const v = Math.floor((x - y) / s);
+            // three faces by (u+v) mod 3
+            const face = mod(u + v, 3);
+            // sprinkle hash to break ties between tiles
+            const h = hash2D(seed, u, v);
+            return face === 0 ? 1 : face === 1 ? 2 : 3 ^ (h & 1);
+        },
+
+        // 28 hex-tiles (axial coords; honeycomb)
+        28: (x, y) => {
+            // hex radius in pixels (tile scale)
+            const s = Math.max(6, blockSize * 3);
+
+            // pointy-top transforms (redblobgames formulas)
+            // pixel -> axial (fractional)
+            const qf = ((Math.sqrt(3) / 3) * x - (1 / 3) * y) / s;
+            const rf = ((2 / 3) * y) / s;
+
+            // axial -> cube, then round to nearest hex
+            let cx = qf;
+            let cz = rf;
+            let cy = -cx - cz;
+
+            let rx = Math.round(cx);
+            let ry = Math.round(cy);
+            let rz = Math.round(cz);
+
+            const xdiff = Math.abs(rx - cx);
+            const ydiff = Math.abs(ry - cy);
+            const zdiff = Math.abs(rz - cz);
+
+            if (xdiff > ydiff && xdiff > zdiff) {
+                rx = -ry - rz;
+            } else if (ydiff > zdiff) {
+                ry = -rx - rz;
+            } else {
+                rz = -rx - ry;
+            }
+
+            // back to axial (q, r) tile coords
+            const q = rx,
+                r = rz;
+
+            // color by tile
+            return mod(hash2D(seed, q, r), paletteLen);
+        },
+
+        // 29 triangles (alternating right triangles)
+        29: (x, y) => {
+            const s = Math.max(6, blockSize * 3);
+            const gx = Math.floor(x / s),
+                gy = Math.floor(y / s);
+            const lx = x % s,
+                ly = y % s;
+            const diag = lx + ly < s;
+            const base = (gx ^ gy) & 1 ? 1 : 2;
+            return diag ? base : base ^ 3;
+        },
+
+        // 30 chevron (V stripes from center)
+        30: (x, y) => {
+            const step = Math.max(2, blockSize);
+            const v = Math.floor((Math.abs(x - cx) + (y - cy)) / step);
+            return mod(v, paletteLen);
+        },
+
+        // 31 grid-rings (dots inside grid rings)
+        31: (x, y) => {
+            const cell = Math.max(8, blockSize * 4);
+            const bx = Math.floor(x / cell),
+                by = Math.floor(y / cell);
+            const cxp = bx * cell + cell / 2,
+                cyp = by * cell + cell / 2;
+            const r = Math.hypot(x - cxp, y - cyp);
+            const band = Math.max(2, cell / 6);
+            const k = Math.floor(r / band);
+            return mod(k + (hash2D(seed, bx, by) & 1), paletteLen);
+        },
     };
 }

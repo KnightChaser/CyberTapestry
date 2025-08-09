@@ -18,15 +18,25 @@ export const MODE_NAMES = [
     "sectors",
     "stripes",
     "checker",
-    "diamonds", // L1 distance bands
-    "squares", // Chebyshev rings
-    "spiral", // angle + radius swirl bands
-    "spokes", // wheel spokes
-    "bricks", // staggered brick tiling
-    "voronoi", // grid-cell Voronoi
-    "value-noise", // bilinear hash noise (quantized)
-    "weave", // over/under weave lattice
-    "crosshatch", // plus-sign lattice
-    "rot45-checker", // 45° rotated checker
-    "kaleido8", // 8-way kaleidoscope
+    "diamonds",
+    "squares",
+    "spiral",
+    "spokes",
+    "bricks",
+    "voronoi",
+    "value-noise",
+    "weave",
+    "crosshatch",
+    "rot45-checker",
+    "kaleido8",
+    "concentric-squares",
+    "bullseye-bold",
+    "dots-grid",
+    "waves",
+    "square-maze",
+    "iso-cubes",
+    "hex-tiles",
+    "triangles",
+    "chevron",
+    "grid-rings",
 ];
